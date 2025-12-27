@@ -31,3 +31,9 @@ V = torch.randn(131072, 128, device='cuda')
 
 # Runs successfully where standard attention would OOM
 output = run_flash(Q, K, V)
+```
+### Future Optimization Roadmap
+To bridge the gap between this V1 implementation and production kernels (PyTorch SDPA/FlashAttention-2):
+1.  **Tensor Cores (WMMA):** Replace the inner dot-product loops with Warp Matrix Multiply Accumulate instructions.
+2.  **FP16/BF16 Support:** Reduces shared memory footprint by 50%, allowing for larger tile sizes ($B_r, B_c$) and higher occupancy.
+3.  **Software Pipelining:** Prefetching the next tile from HBM into registers while computing the current tile to hide memory latency.
