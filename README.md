@@ -8,7 +8,7 @@ The project is structured into two main iterations:
 * `FlashAttentionBenchmark.ipynb`: Jupyter notebook for benchmarking kernel performance against naive CUDA and PyTorch SDPA.
 
 ## Performance Benchmark
-*Hardware: NVIDIA T4 Tensor Core GPU | Hidden Dimension $d=128$ | Precision: FP16*
+*Hardware: NVIDIA T4 Tensor Core GPU | Hidden Dimension d=128 | Precision: FP16*
 
 The optimized kernel (`FlashAttention.cu`) successfully overtakes the Naive baseline at sequence length $N=4096$ and scales linearly to $N=196,608+$ where Naive attention crashes due to Out-Of-Memory (OOM) errors.
 
