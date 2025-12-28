@@ -1,4 +1,4 @@
-# CUDA FlashAttention Pedagogical Implementation in CUDA C++ (V1)
+# CUDA FlashAttention Pedagogical Implementation in CUDA C++
 
 This repository contains a high-performance CUDA C++ implementation of the **FlashAttention** algorithm (Dao et al.). It demonstrates the progression from a naive memory-bound attention kernel to an optimized, tile-based implementation capable of infinite context scaling on limited hardware.
 
