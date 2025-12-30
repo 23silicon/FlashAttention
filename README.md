@@ -4,7 +4,7 @@ This repository contains a high-performance CUDA C++ implementation of the **Fla
 
 The project is structured into two main iterations:
 * `FlashAttentionFirstAttempt.cu`: Initial FP32 implementation. Functional but limited by bank conflicts and low occupancy. Contain the tiling and online softmax logic at the core of FlashAttention's increased processing capabilities.
-* `FlashAttention.cu`: Optimized FP16 implementation featuring strided memory access, increased tile sizes, and reduced instruction overhead. Allows it to outperform naive attention on large datasets, but still far behind Pytorch's Scaled Dot Product Attention (SDPA) due to its industry-grade optimizations. 
+* `FlashAttention.cu`: Optimized FP16 implementation featuring strided memory access, increased tile sizes, and reduced instruction overhead. Allows it to outperform naive attention on large datasets, but still far behind Pytorch's Scaled Dot Product Attention (SDPA) due to its industry-grade optimizations.
 * `FlashAttentionBenchmark.ipynb`: Jupyter notebook for benchmarking kernel performance against naive CUDA and PyTorch SDPA.
 
 ## Performance Benchmark
@@ -14,14 +14,14 @@ The optimized kernel (`FlashAttention.cu`) successfully overtakes the Naive base
 
 | N (Seq Len) | Naive (ms) | Flash (ms) | PyTorch (ms) | Speedup (vs Naive) | Notes |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **1024** | 3.39 | 10.73 | 0.06 | 0.32x | Naive wins (L2 Cache hits) |
-| **4096** | 50.20 | 45.70 | 0.61 | **1.10x** | **Crossover Point** (Flash becomes faster) |
-| **16384** | 873.05 | 784.98 | 11.35 | **1.11x** | Naive hits HBM bandwidth wall |
-| **24576** | 2326.02 | 1559.26 | 25.57 | **1.49x** | Peak relative speedup |
-| **32768** | 3958.30 | 2879.11 | 43.32 | **1.37x** | Last successful Naive run |
-| **49152** | **OOM** | 6184.66 | 101.62 | **$\infty$** | Naive self-attention can no longer execute |
-| **131072** | **OOM** | 43530.52 | 819.68 | **$\infty$** | Scaling to 128k context |
-| **196608** | **OOM** | 98195.19 | 2026.16 | **$\infty$** | Scaling to 196k context |
+| **1024** | 3.41 | 10.44 | 0.06 | 0.33x | Naive wins (L2 Cache hits) |
+| **4096** | 49.55 | 41.24 | 0.61 | **1.20x** | **Crossover Point** (Flash becomes faster) |
+| **16384** | 862.99 | 720.87 | 10.95 | **1.20x** | Naive hits HBM bandwidth wall |
+| **24576** | 2202.61 | 1499.46 | 26.54 | **1.47x** | Significant memory bandwidth savings |
+| **32768** | 4304.87 | 2786.46 | 44.46 | **1.54x** | **Peak Relative Speedup** & Last Naive Run |
+| **49152** | **OOM** | 6119.29 | 104.08 | **$\infty$** | Naive self-attention can no longer run |
+| **131072** | **OOM** | 42834.59 | 817.84 | **$\infty$** | Scaling to 128k context |
+| **262144** | **OOM** | 169369.66 | 3939.94 | **$\infty$** | Scaling to **262k context** |
 
 ## Optimization Journey
 
@@ -37,7 +37,7 @@ The initial attempt implemented the core tiling logic and online softmax.
 This version addresses the architectural bottlenecks of the first attempt, resulting in a robust speedup.
 
 1.  **Bank Conflict Resolution (Padding):**
-    * **The Fix:** Introduced a "dummy" padding of 8 elements to the Shared Memory allocation (`stride = d + 8`).
+    * **The Fix:** Introduced a "dummy" padding of 1 element per row to the Shared Memory allocation (`stride = d + 1`).
     * **The Result:** This shifts the memory addresses such that threads in a warp access distinct memory banks simultaneously. This restored full SRAM bandwidth, moving from 32-cycle serial reads to 1-cycle parallel reads.
 
 2.  **Precision Shift (FP32 $\to$ FP16):**
@@ -49,10 +49,10 @@ This version addresses the architectural bottlenecks of the first attempt, resul
 
 ## Comparison to State of the Art (PyTorch SDPA)
 
-While `FlashAttention.cu` beats the Naive implementation, it runs at approximately **1.5%** of the speed of PyTorch's native `scaled_dot_product_attention`.
+While `FlashAttention.cu` beats the Naive implementation, it runs at approximately **2%** of the speed of PyTorch's native `scaled_dot_product_attention`.
 
 **Why the massive gap between my kernel and SDPA?**
-1.  **Hardware Utilization (The 16x Gap):**
+1.  **Hardware Utilization (Most important):**
     * **My Kernel:** Uses **CUDA Cores** (Scalar `hadd`/`hmul`). It computes matrix multiplications by iterating through vectors one element at a time.
     * **PyTorch SDPA:** Uses **Tensor Cores** (Matrix `hmma`). These specialized hardware units perform $4 \times 4$ matrix multiplications in a single clock cycle, providing vastly higher theoretical throughput.
 2.  **Memory Pipelining:**
