@@ -1,6 +1,6 @@
 # FlashAttention Pedagogical Implementation in CUDA C++
 
-This repository contains a high-performance CUDA C++ implementation of the **FlashAttention** algorithm (Dao et al.). It demonstrates the progression from a naive memory-bound attention kernel to an optimized, tile-based implementation capable of infinite context scaling on limited hardware.
+This repository contains a memory-optimized CUDA C++ implementation of the **FlashAttention** algorithm (Dao et al.). It demonstrates the progression from a naive memory-bound attention kernel to an optimized, tile-based implementation capable of linear context scaling on sequence lengths of 262k+ on limited hardware.
 
 The project is structured into two main iterations:
 * `FlashAttentionFirstAttempt.cu`: Initial FP32 implementation. Functional but limited by bank conflicts and low occupancy. Contain the tiling and online softmax logic at the core of FlashAttention's increased processing capabilities.
@@ -47,6 +47,8 @@ This version addresses the architectural bottlenecks of the first attempt, resul
     * Increased Query Tile Size ($B_r$) from 64 to 128.
     * This ensures 4 warps run per block, allowing the CUDA scheduler to execute math instructions on one warp while others stall on global memory loads.
 
+<img width="1234" height="733" alt="image" src="https://github.com/user-attachments/assets/53a75053-2cac-48d4-9f0c-2e82ce86e73a" />
+
 ## Comparison to State of the Art (PyTorch SDPA)
 
 While `FlashAttention.cu` beats the Naive implementation, it runs at approximately **2%** of the speed of PyTorch's native `scaled_dot_product_attention`.
@@ -82,3 +84,4 @@ V = torch.randn(N, d, device='cuda', dtype=torch.float16)
 # Output: (N, d)
 output = flash_attn_cuda.run_flash(Q, K, V)
 ```
+
