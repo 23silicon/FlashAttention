@@ -4,12 +4,13 @@
 
 #define Br 128 //canonical Q tile height name in FlashAttention paper
 #define Bc 16 //canonical K/V tiles height
+#define padding 1
 
 __global__ void flash_attention(const half* Q, const half* K, const half* V, half* output,
                                 int M, int N, int d, int Tr, int Tc, float scale) {
     int id = blockDim.x * blockIdx.x + threadIdx.x;
     extern __shared__ half sram[];
-    int sram_stride = d+8; //sram padding for resolving memory bank conflicts (again hopefully speeding up the kernel)
+    int sram_stride = d+padding; //sram padding for resolving memory bank conflicts (again hopefully speeding up the kernel)
 
     //pointers to the beginning of each tile's allocated region in shared memory
     half* Qtile = sram; //rows 0-Br are for Q tile, height Br
@@ -120,7 +121,7 @@ extern "C" void solve_flash(const half* Q, const half* K, const half* V, half* o
     dim3 threadsPerBlock(Br);
     dim3 blocksPerGrid(Tr);
     //extra sram for strided access, hopefully solving sram bank conflicts
-    int sram_size = (Br * (d+8) + Bc * (d+8) + Bc * (d+8)) * sizeof(half); //1 tile of Q, 1 tile of K, 1 tile of V
+    int sram_size = (Br * (d+padding) + Bc * (d+padding) + Bc * (d+padding)) * sizeof(half); //1 tile of Q, 1 tile of K, 1 tile of V
     float scale = 1.0f / sqrtf(d); //scaling factor multiplied by each element before softmax
 
     flash_attention<<<blocksPerGrid, threadsPerBlock, sram_size>>>(Q, K, V, output, M, N, d, Tr, Tc, scale);
