@@ -107,7 +107,6 @@ __global__ void flash_attention(const half* Q, const half* K, const half* V, hal
     //divide each element by l to complete the softmax and write to output
     if (id < M) { //final matrix is M x d, this block write the entire vector of length d to row @id
         float divL = 1.0f / l; //avoid repeated division
-        // MODIFIED: Removed vectorization logic
         for (int col = 0; col < d; col++) {
             output[id * d + col] = __float2half(acc[col] * divL);
         }
