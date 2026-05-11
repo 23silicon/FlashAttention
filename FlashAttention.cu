@@ -58,7 +58,7 @@ __global__ void flash_attention(const half* Q, const half* K, const half* V, hal
             if (global_K_row < N) {
                 float sum = 0.0f;
                 for (int col = 0; col < d; col++) {
-                    // Convert half to float for math stability
+                    //Convert half to float for math stability
                     float q_val = __half2float(Qtile[threadIdx.x * sram_stride + col]);
                     float k_val = __half2float(Ktile[row * sram_stride + col]);
                     sum += q_val * k_val;

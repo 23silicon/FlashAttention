@@ -40,8 +40,8 @@ void initialize_random_half(std::vector<half>& vec) {
 }
 
 int main() {
-    // Profiling size: 16384 | Debugging size: 16
-    int M = 16384, N = 16384, d = 128;
+    // Profiling size: 2<<16 | Debugging size: 16
+    int M = 2<<15, N = 2<<15, d = 128;
     size_t num_elements = M * d;
     size_t matrix_size = num_elements * sizeof(half);
 
